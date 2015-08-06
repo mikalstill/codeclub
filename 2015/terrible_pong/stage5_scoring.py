@@ -1,4 +1,4 @@
-# And a ball, which collides with paddles!
+# Now some scoring
 
 import random
 import time
@@ -38,9 +38,12 @@ class game:
                                      10,
                                      paddle_left + PADDLE_SIZE,
                                      30,
-                                     fill='blue', tag='paddle_two')
+                                     fill='green', tag='paddle_two')
         self.paddle_direction['paddle_one'] = 0
         self.paddle_direction['paddle_two'] = 0
+
+        self.score = {'paddle_one': 0,
+                      'paddle_two': 0}
 
         # And a ball
         self.newball()
@@ -49,6 +52,10 @@ class game:
         self.root.mainloop()
 
     def paint(self):
+        # Display the score
+        self.root.wm_title('Blue: %d, Green: %d' %(self.score['paddle_one'],
+                                                   self.score['paddle_two']))
+        
         # Move paddles
         for paddle in ['paddle_one', 'paddle_two']:
             self.window.move(paddle, self.paddle_direction[paddle], 0)
@@ -96,11 +103,13 @@ class game:
 
         # Ball falls off top and bottom
         if y1 < BALL_SPEED:
+            self.score['paddle_one'] += 1
             self.flash()
             self.window.delete('ball')
             self.newball()
 
         if y2 > WINDOW_HEIGHT - BALL_SPEED:
+            self.score['paddle_two'] += 1
             self.flash()
             self.window.delete('ball')
             self.newball()
