@@ -3,7 +3,7 @@
 # A simple network chat client that will form the basis of our network
 # battleship game.
 
-import select
+import selectors
 import socket
 import sys
 
@@ -37,18 +37,15 @@ else:
 
 prompt()
 
-while True:
-    # We need to read from two places at once, the local user and the remote
-    # one. We therefore use a tiny bit of black magic here...
-    readable, _, errors = select.select([sys.stdin, sock],
-                                        [],
-                                        [sys.stdin, sock])
-    if errors:
-        print('Connection lost!')
-        sys.exit(0)
+# We need to read from two places at once, the local user and the remote
+# one.
+sel = selectors.DefaultSelector()
+sel.register(sys.stdin, selectors.EVENT_READ)
+sel.register(sock, selectors.EVENT_READ)
 
-    for reading in readable:
-        if reading == sys.stdin:
+while True:
+    for channel, events in sel.select():
+        if channel.fileobj == sys.stdin:
             line = sys.stdin.readline()
             sock.send(line.encode())
         else:
