@@ -22,14 +22,17 @@ prompt()
 
 server = sys.stdin.readline().rstrip()
 if server == 'server':
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s = socket.socket()
+    # Allow us to reuse the same port number immediately, for easier testing:
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(('0.0.0.0', PORT))
     s.listen(5)
 
     print('Waiting for a connection...')
-    sock = s.accept()[0]
+    sock, client_addr = s.accept()
+    print('Received connection from %s' % (client_addr,))
 else:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock = socket.socket()
     sock.connect((server, PORT))
 
 prompt()
@@ -37,24 +40,24 @@ prompt()
 while True:
     # We need to read from two places at once, the local user and the remote
     # one. We therefore use a tiny bit of black magic here...
-    readable, _, errors = select.select([sys.stdin.fileno(), sock.fileno()],
+    readable, _, errors = select.select([sys.stdin, sock],
                                         [],
-                                        [sys.stdin.fileno(), sock.fileno()])
+                                        [sys.stdin, sock])
     if errors:
         print('Connection lost!')
         sys.exit(0)
 
     for reading in readable:
-        if reading == sys.stdin.fileno():
+        if reading == sys.stdin:
             line = sys.stdin.readline()
-            sock.send(bytes(line, 'UTF-8'))
+            sock.send(line.encode())
         else:
-            line = sock.recv(1024)
+            line = sock.recv(1024).decode()
             if len(line) == 0:
                 # Reading nothing after a select means the connection is closed
                 print('Connection lost!')
                 sys.exit(0)
 
-            print('\n<< %s' % line.decode('UTF-8').rstrip())
+            print('\n<< %s' % line.rstrip())
 
         prompt()
