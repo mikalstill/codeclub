@@ -37,32 +37,24 @@ else:
 
 prompt()
 
-
 # We need to read from two places at once, the local user and the remote
 # one.
-
-def stdin_ready():
-    line = sys.stdin.readline()
-    sock.send(line.encode())
-
-
-def sock_ready():
-    line = sock.recv(1024).decode()
-    if len(line) == 0:
-        # Reading nothing after a select means the connection is closed
-        print('Connection lost!')
-        sys.exit(0)
-
-    print('\n<< %s' % line.rstrip())
-
-
 sel = selectors.DefaultSelector()
-sel.register(sys.stdin, selectors.EVENT_READ, stdin_ready)
-sel.register(sock, selectors.EVENT_READ, sock_ready)
+sel.register(sys.stdin, selectors.EVENT_READ)
+sel.register(sock, selectors.EVENT_READ)
 
 while True:
     for channel, events in sel.select():
-        handler = channel.data
-        handler()
+        if channel.fileobj == sys.stdin:
+            line = sys.stdin.readline()
+            sock.send(line.encode())
+        else:
+            line = sock.recv(1024).decode()
+            if len(line) == 0:
+                # Reading nothing after a select means the connection is closed
+                print('Connection lost!')
+                sys.exit(0)
+
+            print('\n<< %s' % line.rstrip())
 
         prompt()
