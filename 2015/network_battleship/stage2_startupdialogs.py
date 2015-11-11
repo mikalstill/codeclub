@@ -59,7 +59,7 @@ def send_chat():
     history.insert(tkinter.END, '  Us >> %s\n' % line.rstrip())
     history.see(tkinter.END)
     
-    chat_text.set('')
+    chat_text.delete(0, len(line))
     
 
 def process_waiting_for_connection():
